@@ -1,0 +1,14 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/orders/_empty.html.erb %>
+<%# reason: 空カート表示を本家からコピーした丸ごと上書き (本家と現状差分なし) %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/f7ea162f7ef78b6e1883a8fd5a02ada9a7ad017e %>
+<div class="flex flex-col justify-between h-full">
+  <div class="h-full flex flex-col items-center place-content-center py-10">
+    <%= render 'spree/shared/icons/cart_48' %>
+    <p class="mb-8 mt-4 uppercase text-sm">
+      <%= Spree.t('cart_page.empty_info').html_safe %>
+    </p>
+    <div class="mx-10">
+      <%= link_to Spree.t(:continue_shopping), spree.products_path, class: 'btn-primary !no-underline', data: { 'turbo-frame': '_top' } %>
+    </div>
+  </div>
+</div>

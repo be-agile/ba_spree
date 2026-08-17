@@ -1,0 +1,8 @@
+<% cache ['nav_taxon_square_image', taxon.cache_key_with_version] do %>
+  <% if taxon.present? && taxon.class.name == 'Spree::Taxon' && taxon.square_image&.attached? && taxon.square_image.variable? %>
+    <% img_class ||= 'mr-1' %>
+    <% width ||= 25 %>
+    <% height ||= 25 %>
+    <%= spree_image_tag(taxon.square_image, class: img_class, width: width, height: height, loading: :lazy) %>
+  <% end %>
+<% end %>

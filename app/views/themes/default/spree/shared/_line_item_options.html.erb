@@ -1,0 +1,9 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/shared/_line_item_options.html.erb %>
+<%# reason: オプション表示を色見本付きの詳細表示から options_text の簡易表示に置き換えている %>
+<%# Spree 5.3 追従: 本家の変更(option_values.includes(:option_type) 削除)は本独自実装に該当箇所が無いため版上げのみ %>
+<%# @see https://github.com/be-agile/giga-repeat/issues/859 %>
+<% if line_item.variant.options_text.present? %>
+  <div class="px-2 text-sm line-clamp-2">
+    <%= line_item.variant.options_text %>
+  </div>
+<% end %>

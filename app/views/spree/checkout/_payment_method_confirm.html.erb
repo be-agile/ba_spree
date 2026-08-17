@@ -1,0 +1,8 @@
+<li class="list-group-item p-0 m-0 border-b border-default">
+  <div class="px-5 py-4">
+    <div class="font-medium mb-2">
+      <%= Spree.t(method.name, scope: :payment_methods, default: method.name) %>
+    </div>
+    <%= render partial: "spree/checkout/payment/#{method.method_type}", locals: { payment_method: method } %>
+  </div>
+</li>

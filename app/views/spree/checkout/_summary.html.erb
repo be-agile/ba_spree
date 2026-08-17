@@ -1,0 +1,146 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/spree/checkout/_summary.html.erb %>
+<%# reason: 注文状態 (address/delivery/payment/confirm/complete) ごとに小計・調整・税・合計の算出と表示を作り分けている %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/e6cedf7043ffca764a28841deb78005d66b87a79 %>
+<%= turbo_frame_tag :checkout_summary, id: 'summary' do %>
+  <div class="checkout-content-summary text-sm">
+    <% cache [*spree_storefront_base_cache_scope.call(order.cache_key_with_version), order.state] do %>
+      <div data-hook="order_summary">
+        <div class="flex justify-between items-center mb-2">
+          <span><%= Spree.t(:subtotal) %>:</span>
+          <span><%= order.display_item_total.to_html %></span>
+        </div>
+        <div class="d-table-cell text-right font-weight-bold"></div>
+
+        <% cache spree_storefront_base_cache_scope.call(order.line_item_adjustments.nonzero.cache_key_with_version) do %>
+          <% if order.line_item_adjustments.nonzero.exists? %>
+            <% order.line_item_adjustments.nonzero.promotion.eligible.group_by(&:label).each do |label, adjustments| %>
+              <div class="flex justify-between items-center mb-2">
+                <span class="max-w-[250px] truncate">
+                  <%= label %>:
+                </span>
+                <span>
+                  <%= Spree::Money.new(adjustments.sum(&:amount), currency: order.currency).to_html %>
+                </span>
+              </div>
+            <% end %>
+          <% end %>
+        <% end %>
+
+        <% if order.state == 'confirm' || order.state == 'complete' %>
+          <% if order.adjustments.nonzero.non_tax.eligible.exists? %>
+            <% sort_adjustments_with_flat_percent_last(order.adjustments.nonzero.non_tax.eligible).each do |adjustment| %>
+              <div class="flex justify-between items-center mb-2">
+                <span>
+                  <%= adjustment.label %>:
+                </span>
+                <span>
+                  <%= adjustment.display_amount.to_html %>
+                </span>
+              </div>
+            <% end %>
+          <% end %>
+        <% else %>
+          <% if order.adjustments.nonzero.non_tax.non_payment_method.eligible.exists? %>
+            <% sort_adjustments_with_flat_percent_last(order.adjustments.nonzero.non_tax.non_payment_method.eligible).each do |adjustment| %>
+              <div class="flex justify-between items-center mb-2">
+                <span>
+                  <%= adjustment.label %>:
+                </span>
+                <span>
+                  <%= adjustment.display_amount.to_html %>
+                </span>
+              </div>
+            <% end %>
+          <% end %>
+        <% end %>
+
+        <% if !(order.state == 'address' || order.state == 'delivery') && order.shipments.any? %>
+          <% if order.has_free_shipping? %>
+            <div class="flex justify-between items-center mb-2">
+              <span><%= Spree.t(:shipping) %>:</span>
+              <span><%= Spree.t(:free) %></span>
+            </div>
+          <% else %>
+            <div class="flex justify-between items-center mb-2">
+              <span><%= Spree.t(:shipping) %>:</span>
+              <span>
+                <%= order.ship_total <= 0 ? Spree.t(:free) : order.display_ship_total.to_html %>
+              </span>
+            </div>
+
+            <% if order.shipment_adjustments.nonzero.exists? %>
+              <% order.shipment_adjustments.nonzero.promotion.eligible.group_by(&:label).each do |label, adjustments| %>
+                <div class="flex justify-between items-center mb-2">
+                  <span>
+                    <%= label %>:
+                  </span>
+                  <span>
+                    <%= Spree::Money.new(adjustments.sum(&:amount), currency: order.currency).to_html %>
+                  </span>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+
+        <% if order.respond_to?(:gift_card) && order.gift_card.present? %>
+          <div class="flex justify-between items-center mb-2">
+            <span><%= Spree.t(:gift_card) %>:</span>
+            <span>-<%= order.display_gift_card_total %></span>
+          </div>
+        <% elsif order.using_store_credit? %>
+          <div class="flex justify-between items-center mb-2">
+            <span>Store credit:</span>
+            <span><%= order.display_total_applied_store_credit %></span>
+          </div>
+        <% end %>
+
+        <div>
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-lg"><%= Spree.t(:total) %></span>
+            <div class="">
+              <span class="font-semibold text-lg inline" id='summary-order-total' data-currency="<%= Money::Currency.find(order.currency).symbol %>">
+                <% if order.address? %>
+                  <% line_item_adj_total = BigDecimal(order.line_item_adjustments.nonzero.promotion.eligible.sum(:amount).to_s).round(2, BigDecimal::ROUND_HALF_UP) %>
+                  <% order_adj_total = BigDecimal(order.adjustments.nonzero.non_tax.non_payment_method.eligible.sum(:amount).to_s).round(2, BigDecimal::ROUND_HALF_UP) %>
+                  <%= Spree::Money.new(order.item_total + line_item_adj_total + order_adj_total, currency: order.currency).to_html %>
+                <% elsif order.delivery? %>
+                  <% line_item_adj_total = BigDecimal(order.line_item_adjustments.nonzero.promotion.eligible.sum(:amount).to_s).round(2, BigDecimal::ROUND_HALF_UP) %>
+                  <% order_adj_total = BigDecimal(order.adjustments.nonzero.non_tax.non_payment_method.eligible.sum(:amount).to_s).round(2, BigDecimal::ROUND_HALF_UP) %>
+                  <%= Spree::Money.new(order.item_total + line_item_adj_total + order_adj_total, currency: order.currency).to_html %>
+                <% elsif order.payment? %>
+                  <% line_item_adj_total = BigDecimal(order.line_item_adjustments.nonzero.promotion.eligible.sum(:amount).to_s).round(2, BigDecimal::ROUND_HALF_UP) %>
+                  <% order_adj_total = BigDecimal(order.adjustments.nonzero.non_tax.non_payment_method.eligible.sum(:amount).to_s).round(2, BigDecimal::ROUND_HALF_UP) %>
+                  <%= Spree::Money.new(order.item_total + order.shipment_total + line_item_adj_total + order_adj_total, currency: order.currency).to_html %>
+                <% else %>
+                  <%= order.display_total_minus_store_credits.to_html %>
+                <% end %>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# キャッシュキーに order.state を含める: 税の表示を confirm/complete のみに絞っているため、
+        payment 状態(税は確定済みだが非表示)で先にこのフラグメントが「空」でキャッシュされると、
+        税 adjustment 集合が同一(= cache_key_with_version も同一)の confirm でも空キャッシュが
+        再利用され内税が出なくなる(クレカ決済等 payment に滞在してから confirm に進む経路で顕在化)。
+        state をキーに加え payment と confirm を分離する。本家は税表示を payment? でも出すため衝突しない。 %>
+    <% cache [spree_base_cache_scope.call(order.all_adjustments.nonzero.tax.eligible.cache_key_with_version), order.state] do %>
+      <% if order.state == 'confirm' || order.state == 'complete' %>
+        <% taxes = order.all_adjustments.nonzero.tax.eligible.group_by(&:label) %>
+        <% taxes.each do |label, adjustments| %>
+          <div class="flex justify-between items-center mb-2">
+            <span><%= label %></span>
+            <% tax_total = Spree::Money.new(adjustments.sum(&:amount), currency: order.currency) %>
+            <span><%= tax_total.to_html %></span>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <div id="checkout-message" class="mt-8">
+      <%= current_store.checkout_message if current_store.checkout_message.present? %>
+    </div>
+  </div>
+<% end %>

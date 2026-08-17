@@ -1,0 +1,76 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/products/_price.html.erb %>
+<%# reason: 価格表示の From 表記を「〜」に変更し、税込み表示 (show_tax_included) ラベルを追加している %>
+<%# Spree 5.3 追従: price_in → pricing context 経由の価格取得(pricing_context_for_variant / price_for) %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/8426d0be020a6751c7d476e265e716d1973048d4 %>
+<% use_variant ||= false %>
+<% sold_out ||= !product.available? %>
+<% price_class ||= ''%>
+<% price_container_class ||= '' %>
+<% selected_variant ||= nil %>
+<% show_tax_included ||= false %>
+<div class="<%= price_class %>">
+  <div class="flex flex-col gap-3 <%= price_container_class %>">
+    <%
+      if use_variant
+        target = selected_variant
+        sold_out = selected_variant.nil?
+        if sold_out
+          target = @variant_from_options
+          sold_out = @variant_from_options.nil?
+        end
+      else
+        target = product
+        sold_out = !product.available?
+      end
+
+      target ||= product
+
+      # Spree 5.3 追従: price_in → pricing context 経由(default_variant / price_for)
+      variant_for_context = target.is_a?(Spree::Product) ? target.default_variant : target
+      pricing_context = pricing_context_for_variant(variant_for_context)
+      price = variant_for_context.price_for(pricing_context)
+      money_price = price.display_amount
+
+      if target.is_a?(Spree::Product) && !use_variant && product.price_varies?(current_currency)
+        price = target.lowest_price(current_currency)
+        money_price = price.display_amount
+        money_price = "#{money_price} 〜"
+      end
+
+      # 税込み表示用のロジック
+      tax_label = ''
+      if show_tax_included && product.tax_category.present?
+        tax_rates = Spree::TaxRate.for_tax_category(product.tax_category).included_in_price
+        if tax_rates.any?
+          tax_label = " #{Spree.t(:tax_included)}"
+        end
+      end
+    %>
+    <div>
+      <% if price.compare_at_amount.present? && price.compare_at_amount > price.amount %>
+        <span class="hidden">
+          <%= Spree.t(:regular_price) %>
+        </span>
+        <p class="inline pr-2 opacity-50 line-through">
+          <%= price.display_compare_at_amount %><%= tax_label %>
+        </p>
+        <span class="hidden pr-2">
+          <%= Spree.t(:sale_price) %>
+        </span>
+        <p class="inline text-danger">
+          <%= money_price %><%= tax_label %>
+        </p>
+      <% else %>
+        <span class="hidden">
+          <%= Spree.t(:regular_price) %>
+        </span>
+
+        <% if price&.amount.nil? %>
+          <span class="uppercase"><%= Spree.t(:not_available) %></span>
+        <% else %>
+          <p><%= money_price %><%= tax_label %></p>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

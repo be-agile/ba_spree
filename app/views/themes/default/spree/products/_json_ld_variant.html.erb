@@ -1,0 +1,15 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/products/_json_ld_variant.html.erb %>
+<%# reason: JSON-LD の variant 配列出力で末尾以外にカンマを付与して有効な JSON にしている %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/69b4884768f21e2ed68e82521538a8a7b8736b09 %>
+<% cache ["json-ld-variant", spree_base_cache_scope, variant.cache_key_with_version] do %>
+{
+  "@type": "Offer",
+  <% if variant.sku.present? %>
+    "sku": <%= variant.sku.to_json.html_safe %>,
+  <% end %>
+  "availability": "http://schema.org/<%= variant.available? ? 'InStock' : 'OutOfStock' %>",
+  "price": <%= variant.amount_in(current_currency).to_json.html_safe %>,
+  "priceCurrency": <%= current_currency.to_json.html_safe %>,
+  "url": <%= spree.product_url(product, variant_id: variant.id, host: current_store.url_or_custom_domain).to_json.html_safe %>
+}<%= ',' if defined?(variant_iteration) && !variant_iteration.last? %>
+<% end %>

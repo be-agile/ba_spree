@@ -1,0 +1,65 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/products/_details.html.erb %>
+<%# reason: 商品説明の read more を無効化し、商品プロパティの取得・並び順を独自実装に置き換えたコピー上書き %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/cdbd620ff4b0a09724ff5c060eb90ef002539222 %>
+<% cache spree_base_cache_scope.call(product) do %>
+<% if product.storefront_description.present? %>
+<% description_text = strip_tags(product.storefront_description) %>
+<div data-controller="read-more" class="py-4 flex flex-col gap-4" data-read-more-more-text-value="<%= Spree.t(:read_more) %>" data-read-more-less-text-value="Read less">
+  <div class="prose product-description text-sm">
+    <%= raw(product.storefront_description) %>
+  </div>
+  <%
+=begin%>
+<% if description_text.size > 250 %>
+  <%= button_tag Spree.t(:read_more), data: { action: "read-more#toggle" }, class: "font-bold underline text-sm" %>
+  <% end %>
+<%
+=end%>
+</div>
+<% end %>
+
+<div class="st-accordion" data-controller="accordion">
+  <% short_description = product.property_metafield_value('short_description') %>
+
+  <% if short_description.present? %>
+  <div class="product-property py-4 border-b border-default">
+    <%= link_to '#property_details', class: 'text-sm uppercase tracking-widest inline-flex w-full justify-between !border-b-transparent', data: { action: 'accordion#toggle' } do %>
+    <%= Spree.t(:details) %>
+    <%= render 'spree/shared/icons/chevron_down' %>
+    <% end %>
+    <div class="text-sm st-accordion__content" data-accordion-id="property_details">
+      <div class="pt-4"><%= product.description %></div>
+    </div>
+  </div>
+  <% end %>
+
+  <% shipping_policy = current_store.customer_shipping_policy %>
+  <% if shipping_policy.present? %>
+  <div class="product-property py-4 border-b border-default">
+    <%= link_to "#property_shipping_policy", class: 'text-sm uppercase tracking-widest inline-flex w-full justify-between !border-b-transparent', data: { action: 'accordion#toggle' } do %>
+    <%= Spree.t(:shipping_policy) %>
+    <%= render 'spree/shared/icons/chevron_down' %>
+    <% end %>
+    <div class="text-sm st-accordion__content" data-accordion-id="property_shipping_policy">
+      <div class="pt-4"><%= shipping_policy %></div>
+    </div>
+  </div>
+  <% end %>
+
+  <%# ProductProperty -> metafields 移行(Spree 5.4 の Property 削除対応)。
+      フロント表示対象(namespace=properties かつ display_on=both)の metafield を表示。
+      short_description は上で「詳細」として別表示済みのため、ここでは除外して二重表示を防ぐ。 %>
+  <% product.front_end_property_metafields.reject { |mf| mf.key == 'short_description' }.each do |metafield| %>
+  <div class="product-property py-4 border-b border-default">
+
+    <%= link_to "#property_#{metafield.id}", class: 'text-sm uppercase tracking-widest inline-flex w-full justify-between !border-b-transparent', data: { action: 'accordion#toggle' } do %>
+    <%= metafield.name %>
+    <%= render 'spree/shared/icons/chevron_down' %>
+    <% end %>
+    <div class="text-sm st-accordion__content" data-accordion-id="property_<%= metafield.id %>">
+      <div class="pt-4"><%= simple_format(metafield.value) %></div>
+    </div>
+  </div>
+  <% end %>
+</div>
+<% end %>

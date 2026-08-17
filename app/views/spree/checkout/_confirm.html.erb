@@ -1,0 +1,25 @@
+<%= form_for @order, url: spree.update_checkout_path(@order.token, @order.state), html: { id: "checkout_form_#{@order.state}" } do |form| %>
+  <%= form.hidden_field :state_lock_version %>
+
+  <% if @order.respond_to?(:gift_card) %>
+    <%= turbo_frame_tag :gift_card_code_field do %>
+      <%= hidden_field_tag 'order[gift_card_code]', @order.gift_card&.code %>
+      <%= hidden_field_tag 'order[gift_card_amount]', @order.gift_card_total %>
+    <% end %>
+  <% end %>
+
+  <% use_shipping = @order.shipping_eq_billing_address? || @order.bill_address.nil? || @order.bill_address.new_record? %>
+
+  <div class="border text-sm px-5 mb-6 py-4 rounded-md border-default">
+      <div class="flex items-center">
+        <div class="min-w-[60px] max-w-[60px]">
+          <%= Spree.t(:bill_address) %>
+        </div>
+        <div class="px-5 word-break">
+          <%= @order.bill_address.to_s.gsub('<br/>', I18n.t("address_format_i18n.delimiter", default: " ")).html_safe %>
+        </div>
+      </div>
+  </div>
+
+  <%= render 'spree/checkout/payment_methods', form: form %>
+<% end %>

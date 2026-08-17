@@ -1,0 +1,40 @@
+      <div class="py-2">
+        <%
+          # ゲストユーザーの場合: guest=true かつ deleted_at!=nil（論理削除されている）
+          # 会員の場合: guest!=true かつ deleted_at==nil
+          # 同じメールアドレスで既に購読済みなら表示しない
+          show_marketing_checkbox = false
+          if try_spree_current_user
+            # ログイン済みユーザー（会員）
+            show_marketing_checkbox = !try_spree_current_user.guest? && try_spree_current_user.deleted_at.nil? && !try_spree_current_user.accepts_email_marketing?
+          else
+            # 未ログインユーザー（ゲスト）
+            if @order.email.present?
+              existing_user = User.with_deleted.find_by(email: @order.email.downcase)
+              if existing_user
+                # 既存ユーザーがいる場合
+                if existing_user.guest? && existing_user.deleted_at.present?
+                  # ゲストユーザーで論理削除されている場合、購読状況をチェック
+                  show_marketing_checkbox = !existing_user.accepts_email_marketing?
+                end
+              else
+                # 新規ユーザーの場合は表示
+                show_marketing_checkbox = true
+              end
+            else
+              # メールアドレスが未入力の場合は表示
+              show_marketing_checkbox = true
+            end
+          end
+        %>
+        <% if show_marketing_checkbox %>
+          <div class="flex items-center gap-2">
+            <%= form.check_box :accept_marketing, { checked: true, class: 'checkbox-input' } %>
+            <%= form.label :accept_marketing, class: 'cursor-pointer text-sm select-none' do %>
+              <%= Spree.t('storefront.newsletter_subscription.join') %>
+            <% end %>
+          </div>
+        <% else %>
+          <%= form.hidden_field :accept_marketing, value: true %>
+        <% end %>
+      </div>

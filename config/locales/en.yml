@@ -1,0 +1,15 @@
+en:
+  spree:
+    promotions: Promotions
+    confirm_order: Confirm Order
+    continue_without_logging_in: Continue without logging in
+    add_to_cart_discontinued: Discontinued
+    add_to_cart_not_purchasable: Not purchasable
+    add_to_cart_not_available: Not available
+    order_mailer:
+      confirm_email:
+        download_digitals: Download Digitals
+    api:
+      v2:
+        digitals:
+          unpaid: You can download it after the payment is completed.

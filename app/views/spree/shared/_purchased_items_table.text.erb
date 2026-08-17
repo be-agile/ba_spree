@@ -1,0 +1,24 @@
+<%# @gem-override spree_emails-5.3.6/app/views/spree/shared/_purchased_items_table.text.erb %>
+<%# reason: テキストメール明細の数量・割引・送料・税の表示を line_item_adjustments ベースに組み替えている %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/8f447188bc31d60e0ce4af8e9d5377d34360433d %>
+<% line_items.each do |item| %>
+<%= item.variant.sku %> <%= raw(item.variant.product.name) %> <%= raw(item.variant.options_text) -%> (<%=item.quantity%> x <%= item.single_money %>) = <%= item.display_amount %>
+<% end %>
+============================================================
+<%= Spree.t('order_mailer.subtotal') %> <%= order.display_item_total %>
+<% if order.line_item_adjustments.exists? %>
+  <% if order.line_item_adjustments.promotion.eligible.exists? %>
+    <% order.line_item_adjustments.promotion.eligible.group_by(&:label).each do |label, adjustments| %>
+<%= label %>: <%= Spree::Money.new(adjustments.sum(&:amount), currency: order.currency) %>
+    <% end %>
+  <% end %>
+<% end %>
+<% sort_adjustments_with_flat_percent_last(order.adjustments.eligible.non_tax.non_zero).each do |adjustment| %>
+<%= adjustment.label %> <%= adjustment.display_amount %>
+<% end %>
+<% order.shipments.group_by { |s| s.selected_shipping_rate.try(:name) }.each do |name, shipments| %>
+<%= Spree.t(:shipping) %>: <%= name %> <%= Spree::Money.new(shipments.sum(&:discounted_cost), currency: order.currency) %>
+<% end %>
+<% order.all_adjustments.nonzero.tax.eligible.group_by(&:label).each do |label, adjustments| %>
+<%= label %>: <%= Spree::Money.new(adjustments.sum(&:amount), currency: order.currency).to_html %>
+<% end %>

@@ -1,0 +1,10 @@
+<%= turbo_stream.replace_all '.cart-contents' do %>
+  <%= turbo_frame_tag cart_id(@order), class: 'cart-contents' do %>
+    <% if !@line_items || @line_items.empty? %>
+      <%= render 'spree/orders/empty' %>
+    <% else %>
+      <%= render 'spree/orders/cart' %>
+    <% end %>
+    <%= render_storefront_partials(:cart_partials) %>
+  <% end %>
+<% end %>

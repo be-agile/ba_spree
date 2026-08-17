@@ -1,0 +1,55 @@
+<%# @gem-override spree_admin-5.3.6/app/views/spree/admin/shared/sidebar/_promotions_nav.html.erb %>
+<%# reason: プロモーション系サイドバーに scheduled_discounts / volume_discount / amount_discount / gift_cards のメニューを追加している %>
+<%# Spree 5.3 追従: 折りたたみサイドバー用 dropdown の非表示クラスを Bootstrap d-none → Tailwind v4 hidden に変更 %>
+<%# @see https://github.com/be-agile/giga-repeat/issues/697 %>
+<% promotions_active = %w[promotions scheduled_discounts volume_discount_tier_groups amount_discount_tier_groups].include?(controller_name) %>
+<% discounts_active = %w[promotions gift_cards gift_card_batches coupon_codes].include?(controller_name) %>
+<% if can?(:manage, Spree::Promotion) %>
+  <%= nav_item(Spree.t(:promotions), spree.admin_promotions_path, icon: 'box-seam', active: promotions_active) %>
+
+  <%# Submenu for expanded sidebar (only shown when active) %>
+  <% if promotions_active %>
+    <ul class="ml-4 pl-1 mb-2 nav-submenu mt-1">
+      <% if can?(:manage, Spree::Promotion) && defined?(Spree::ScheduledDiscount) %>
+        <li class="nav-item">
+          <%= nav_item(Spree.t(:scheduled_discounts), spree.admin_scheduled_discounts_path, icon: 'basket-star', active: %w[scheduled_discounts].include?(controller_name)) %>
+        </li>
+      <% end %>
+
+      <% if can?(:manage, Spree::Promotion) && defined?(Spree::VolumeDiscountTierGroup) %>
+        <li class="nav-item">
+          <%= nav_item(Spree.t(:volume_discount_tier_groups), spree.admin_volume_discount_tier_groups_path, icon: 'history', active: %w[volume_discount_tier_groups].include?(controller_name)) %>
+        </li>
+      <% end %>
+
+      <% if can?(:manage, Spree::Promotion) && defined?(Spree::AmountDiscountTierGroup) %>
+        <li class="nav-item">
+          <%= nav_item(Spree.t(:amount_discount_tier_groups), spree.admin_amount_discount_tier_groups_path, icon: 'calculator', active: %w[amount_discount_tier_groups].include?(controller_name)) %>
+        </li>
+      <% end %>
+
+      <% if discounts_active && defined?(Spree::GiftCard) && spree.respond_to?(:admin_gift_cards_path) && can?(:manage, Spree::GiftCard) %>
+        <li class="nav-item">
+          <%= active_link_to Spree.t(:gift_cards), spree.admin_gift_cards_path, class: 'nav-link', active: %w[gift_cards gift_card_batches].include?(controller_name) %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <%# Submenu dropdown for collapsed sidebar (always rendered, shown on hover) %>
+  <ul class="nav-submenu-dropdown hidden dropdown-container">
+    <%= nav_item(Spree.t(:promotions), spree.admin_promotions_path) %>
+    <% if can?(:manage, Spree::Promotion) && defined?(Spree::ScheduledDiscount) %>
+      <%= nav_item(Spree.t(:scheduled_discounts), spree.admin_scheduled_discounts_path) %>
+    <% end %>
+    <% if can?(:manage, Spree::Promotion) && defined?(Spree::VolumeDiscountTierGroup) %>
+      <%= nav_item(Spree.t(:volume_discount_tier_groups), spree.admin_volume_discount_tier_groups_path) %>
+    <% end %>
+    <% if can?(:manage, Spree::Promotion) && defined?(Spree::AmountDiscountTierGroup) %>
+      <%= nav_item(Spree.t(:amount_discount_tier_groups), spree.admin_amount_discount_tier_groups_path) %>
+    <% end %>
+    <% if defined?(Spree::GiftCard) && spree.respond_to?(:admin_gift_cards_path) && can?(:manage, Spree::GiftCard) %>
+      <%= nav_item(Spree.t(:gift_cards), spree.admin_gift_cards_path) %>
+    <% end %>
+  </ul>
+<% end %>

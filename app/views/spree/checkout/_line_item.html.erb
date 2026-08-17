@@ -1,0 +1,26 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/spree/checkout/_line_item.html.erb %>
+<%# reason: カート明細のサムネイルサイズ (64→60) と価格表示を pre_tax_amount から Spree::Money(line_item.amount) に変更している %>
+<%# note: 5.3 で本家は spree_image_tag に variant: :mini (128px の preprocessed named variant) を追加したが、 %>
+<%#   variant 指定は width/height を無視するため ba_spree の 60px サムネイル方針と競合する。 %>
+<%#   60px の動的 variant を維持するため variant: :mini は取り込まない。 %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/46ac63582aa36aea93e250a14274626e98c5207a %>
+<div class="flex justify-between items-center pt-3">
+  <div class="mr-5 w-[60px] h-[60px] relative rounded bg-accent-100 shrink-0">
+    <span class="rounded-full text-xs text-center font-bold pl-[0.5px] py-1 w-6 text-sidebar-text bg-background absolute -right-2 -top-3">
+      <%= line_item.quantity %>
+    </span>
+    <% image = line_item.variant.default_image %>
+    <% if image.present? && image.attached? && image.variable? %>
+      <%= spree_image_tag(image, class: 'rounded border border-default bg-transparent object-cover object-center', loading: :lazy, width: 60, height: 60) %>
+    <% else %>
+      <div style="width:60px;height:60px;" class="bg-accent-100 border border-default rounded"></div>
+    <% end %>
+  </div>
+  <div class="flex-1 pr-3 text-sm">
+    <p class="font-bold word-break"><%= line_item.name %></p>
+    <p class="text-xs"><%= line_item.options_text %></p>
+  </div>
+  <div class="font-semibold text-sm text-right shrink-0">
+    <%= Spree::Money.new(line_item.amount, currency: line_item.currency) %>
+  </div>
+</div>

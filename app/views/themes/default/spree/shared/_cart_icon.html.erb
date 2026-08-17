@@ -1,0 +1,19 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/shared/_cart_icon.html.erb %>
+<%# reason: カートアイコンに title 属性とカウンター位置の調整を加えたコピー上書き %>
+<%# @see https://github.com/be-agile/giga-repeat/issues/920 %>
+<% item_count ||= current_order&.item_count %>
+
+<%= turbo_frame_tag "cart-icon-#{item_count}", target: '_top' do %>
+  <%= link_to spree.cart_path,
+    class: 'relative block w-6',
+    id: "cart-pane-link",
+    title: Spree.t('storefront.cart.items_in_cart'),
+    data: { action: 'click->slideover#toggle click@window->slideover#hide' },
+    onclick: 'event.preventDefault()' do %>
+    <%= render 'spree/shared/icons/cart' %>
+    <span class='cart-counter w-full text-[10px] font-extrabold absolute text-center' style='top: -10px; left: 50%; transform: translateX(-50%);'>
+      <%= item_count if item_count&.positive? %>
+    </span>
+    <span class='sr-only'><%= Spree.t('storefront.cart.items_in_cart') %></span>
+  <% end %>
+<% end %>

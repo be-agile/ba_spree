@@ -1,0 +1,38 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/page_sections/_featured_taxons.html.erb %>
+<%# reason: 注目カテゴリのレイアウト (グリッド列数・画像サイズ・リンク表示) を変更したコピー上書き %>
+<%# Spree 5.3 追従: 画像 placeholder 背景を bg-gray-200 → bg-border に変更 %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/cdbd620ff4b0a09724ff5c060eb90ef002539222 %>
+<% cache_unless page_builder_enabled?, spree_base_cache_scope.call(section) do %>
+<div class="page-container py-5" style="<%= section_styles(section) %>">
+  <% heading_size = case section.preferred_heading_size
+                      when 'small' then 'text-base font-medium'
+                      when 'medium' then 'text-lg lg:text-xl font-medium'
+                      when 'large' then 'text-xl lg:text-2xl font-medium'
+                      end
+    %>
+  <h3 class="<%= heading_size %> mb-4 text-<%= section.preferred_heading_alignment %>">
+    <%= section.preferred_heading %>
+  </h3>
+  <div class="gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:gap-x-8 mb-7 grid">
+    <% section.links.each do |link| %>
+      <%= page_builder_link_to link, title: link.label, class: 'group block overflow-hidden', target: link.open_in_new_tab.presence && '_blank', data: { turbo_frame: '_top' } do %>
+        <% if link.linkable.image&.attached? && link.linkable.image&.variable? %>
+        <div class="flex space-y-2 flex-col">
+          <%= spree_image_tag(link.linkable.image, height: 175, width: 280, class: 'h-full w-full object-cover object-center group-hover:opacity-75 rounded-md bg-border', loading: :lazy, alt: link.label) %>
+          <span class="text-center"><%= link.label %></span>
+        </div>
+        <% else %>
+        <div class="border border-gray-200 shadow-sm p-4 flex items-center justify-center bg-white relative">
+          <div
+            class="absolute left-0 top-0 h-full w-1"
+            style="background-color: var(--primary);"
+          ></div>
+
+          <p class="ml-3 text-gray-800"><%= link.label %></p>
+        </div>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>
+<% end %>

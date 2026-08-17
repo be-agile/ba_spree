@@ -1,0 +1,60 @@
+<%# @gem-override spree_emails-5.3.6/app/views/spree/shared/_purchased_items_table.html.erb %>
+<%# reason: メール明細の割引集計を all_adjustments から line_item_adjustments / 調整 partial / 税ラベル別集計に組み替えている %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/8f447188bc31d60e0ce4af8e9d5377d34360433d %>
+<table class="purchase_content">
+  <%= render collection: line_items, partial: 'spree/shared/purchased_items_table/line_item', as: :line_item %>
+  <%= render 'spree/shared/purchased_items_table/subtotal', order: order %>
+  <% if order.line_item_adjustments.exists? %>
+    <% if order.line_item_adjustments.promotion.eligible.exists? %>
+      <% order.line_item_adjustments.promotion.eligible.group_by(&:label).each do |label, adjustments| %>
+        <tr>
+          <td></td>
+          <td>
+            <p class="f-fallback purchase_total purchase_total--label">
+              <%= label %>:
+            </p>
+          </td>
+          <td class="purchase_total-col">
+            <p class="f-fallback purchase_total">
+              <%= Spree::Money.new(adjustments.sum(&:amount), currency: order.currency) %>
+            </p>
+          </td>
+        </tr>
+      <% end %>
+    <% end %>
+  <% end %>
+  <% sort_adjustments_with_flat_percent_last(order.adjustments.eligible.non_tax.non_zero).each do |adjustment| %>
+    <%= render 'spree/shared/purchased_items_table/adjustment', adjustment: adjustment, order: order %>
+  <% end %>
+  <% order.shipments.group_by { |s| s.selected_shipping_rate&.name }.each do |name, shipments| %>
+    <tr>
+      <td></td>
+      <td>
+        <p class="f-fallback purchase_total purchase_total--label">
+          <%= name %>:
+        </p>
+      </td>
+      <td class="purchase_total-col">
+        <p class="f-fallback purchase_total">
+          <%= Spree::Money.new(shipments.sum(&:discounted_cost), currency: order.currency) %>
+        </p>
+      </td>
+    </tr>
+  <% end %>
+  <% order.all_adjustments.nonzero.tax.eligible.group_by(&:label).each do |label, adjustments| %>
+    <tr>
+      <td></td>
+      <td>
+        <p class="f-fallback purchase_total purchase_total--label">
+          <%= label %>:
+        </p>
+      </td>
+      <td class="purchase_total-col">
+        <p class="f-fallback purchase_total">
+          <%= Spree::Money.new(adjustments.sum(&:amount), currency: order.currency).to_html %>
+        </p>
+      </td>
+    </tr>
+  <% end %>
+  <%= render 'spree/shared/purchased_items_table/total', order: order %>
+</table>

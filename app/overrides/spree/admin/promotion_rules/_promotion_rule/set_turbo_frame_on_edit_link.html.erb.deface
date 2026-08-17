@@ -1,0 +1,11 @@
+<!-- replace 'erb[loud]:contains("edit_admin_promotion_rule_path")' -->
+<%# @see https://github.com/be-agile/giga-repeat/issues/1075 %>
+<%#
+  dropdown は Floating UI でメニューを body 直下へ portal するため、編集リンクが
+  turbo_frame_tag promotion_rule(=dom_id(promotion_rule))の外に出てしまい、
+  data-turbo-frame 無指定だとフルページ遷移になる(更新後にプロモ画面へ戻らない)。
+  対象frameを明示してインライン編集(モーダル相当)に戻す。
+  (元は spree_promotion_rule_property の全面override に含まれていた汎用修正。
+   engine削除に伴い Deface 部分override として ba_spree へ退避。)
+%>
+<%= link_to_with_icon 'pencil', Spree.t('actions.edit'), spree.edit_admin_promotion_rule_path(promotion_rule.promotion, promotion_rule), class: 'dropdown-item', data: { turbo_frame: dom_id(promotion_rule) } if can?(:update, promotion_rule) %>

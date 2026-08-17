@@ -1,0 +1,7 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/products/_description.html.erb %>
+<%# reason: 商品説明を常に全文表示にする(read more / Read less トグルと truncate を撤去) %>
+<% if product.storefront_description.present? %>
+  <div class="prose product-description text-sm">
+    <%= raw(product.storefront_description) %>
+  </div>
+<% end %>

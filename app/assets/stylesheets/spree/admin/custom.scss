@@ -1,0 +1,40 @@
+#main-sidebar {
+  height: calc(100vh - 60px);
+}
+
+// admin 左サイドメニュー: 長いメニュー名(例「ボリュームディスカウントの段階」)が
+// nav-link の white-space: nowrap でサイドバー幅に収まらず右端で見切れていた。
+// 折り返しを許可して全文表示する。サイドバーのナビ配下に限定する。
+.sidebar-content,
+.sidebar-panel,
+#main-sidebar {
+  .nav-link {
+    white-space: normal;
+  }
+}
+
+// メディアフォーム(商品編集のメディア欄等): 画像の一括削除用チェックボックスがクリックできない。
+// タイル内は チェックボックス → ドラッグハンドル → 画像リンク の順に並んでおり、全面を覆う
+// position: absolute の画像が後発のため、チェックボックスの上に重なってクリックを奪っていた。
+// Bootstrap 版の管理画面 CSS には .custom-control に z-index: 1 があったが、Spree 5.2 の
+// Tailwind 移行(spree/spree@dc3e7bb5e2)で失われている(v5.6.1 時点でも未修正)。
+// ドラッグハンドル側の z-index: 2 に合わせて前面に戻す。
+// @see https://github.com/be-agile/giga-repeat/issues/1325
+.media-form__image {
+  .custom-control {
+    z-index: 2;
+  }
+}
+
+// 在庫品一覧(/admin/stock_items): バリエーション名が長いと nowrap で
+// テーブルが横に伸び、横スクロールしないと全体を把握できなかった。
+// セルの折り返しを許可し、画面幅内に全列が収まるようにする。
+body.stock_items {
+  table.table tbody td {
+    white-space: normal;
+
+    * {
+      white-space: normal;
+    }
+  }
+}

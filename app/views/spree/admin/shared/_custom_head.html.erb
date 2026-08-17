@@ -1,0 +1,56 @@
+<%# @gem-override spree_admin-5.3.6/app/views/spree/admin/shared/_custom_head.html.erb %>
+<%# reason: 本家では空の管理画面 head 用 partial に、ba_spree の admin/custom スタイルシート読み込みを追加している %>
+<%#   (日本語だと管理画面の項目名が長くなり見切れるため、その折り返し対応を含む) %>
+<%# @see https://github.com/be-agile/giga-repeat/commit/99098e3ab960a54164fd6766de4dbd7918c1252c %>
+<%= stylesheet_link_tag "spree/admin/custom", media: "all", "data-turbo-track": "reload" %>
+
+<%# local-time gem の JS は config.locale が "en" 固定のため、日時の %a(曜日)が
+    「Mon」のように英語で描画される(例: promotions の作成日時 2025年06月23日(Mon))。
+    Ruby 側の I18n(ja.date.abbr_day_names)を反映できないので、JS の LocalTime に
+    日本語ロケールを登録し locale を ja に切り替えて、曜日を日本語(月)で描画する。
+    24時間表記(useFormat24)も合わせ、注文・お客様等の日時表記とも揃える。 %>
+<script type="module">
+  import LocalTime from "local-time"
+
+  LocalTime.config.i18n["ja"] = {
+    date: {
+      dayNames: ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"],
+      abbrDayNames: ["日", "月", "火", "水", "木", "金", "土"],
+      monthNames: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+      abbrMonthNames: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+      yesterday: "昨日",
+      today: "今日",
+      tomorrow: "明日",
+      on: "{date}",
+      formats: { default: "%Y年%m月%d日", thisYear: "%m月%d日" }
+    },
+    time: {
+      am: "午前", pm: "午後",
+      singular: "約{time}", singularAn: "約{time}",
+      elapsed: "{time}前",
+      second: "秒", seconds: "秒",
+      minute: "分", minutes: "分",
+      hour: "時間", hours: "時間",
+      formats: { default: "%H時%M分", default_24h: "%H時%M分" }
+    },
+    datetime: {
+      at: "{date} {time}",
+      formats: { default: "%Y年%m月%d日 %H時%M分", default_24h: "%Y年%m月%d日 %H時%M分" }
+    }
+  }
+  LocalTime.config.locale = "ja"
+  LocalTime.config.useFormat24 = true
+
+  // admin の application.js が先に LocalTime.start() を実行し、既存の <time> 要素には
+  // 英語ロケールのまま data-localized が付与され「再処理対象外」になっている場合がある。
+  // ロケール切替後に data-localized を外して再描画させ、日本語(曜日)に置き換える。
+  const applyJaLocalTime = () => {
+    document.querySelectorAll("time[data-local][data-localized]").forEach((el) => {
+      el.removeAttribute("data-localized")
+    })
+    LocalTime.run()
+  }
+  document.addEventListener("turbo:load", applyJaLocalTime)
+  document.addEventListener("turbo:morph", applyJaLocalTime)
+  applyJaLocalTime()
+</script>

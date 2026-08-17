@@ -1,0 +1,87 @@
+<%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/orders/_summary.html.erb %>
+<%# reason: カートサマリの小計・割引・合計表示を adjustments ベースに組み替え、買い物を続けるボタンを追加している %>
+<%# @see https://github.com/be-agile/giga-repeat/issues/698 %>
+<%= turbo_frame_tag :cart_summary do %>
+  <% if order.line_items.any? %>
+    <div class="cart-summary-container p-4">
+      <p class="text-center lg:text-right text-sm mb-3">
+        <%= Spree.t('storefront.cart.shipping_and_taxes_calculated_at_checkout') %>
+      </p>
+
+      <div class="shopping-cart-total-text text-center lg:text-right uppercase font-medium">
+        <%= Spree.t(:subtotal) %>:
+        <span class="shopping-cart-total-amount">
+          <%= order.display_item_total %>
+        </span>
+      </div>
+
+      <% if order.line_item_adjustments.nonzero.exists? %>
+        <% order.line_item_adjustments.nonzero.promotion.eligible.group_by(&:label).each do |label, adjustments| %>
+          <div class="shopping-cart-total-text text-center lg:text-right uppercase font-medium">
+            <span>
+              <%= label %>:
+            </span>
+            <span>
+              <%= Spree::Money.new(adjustments.sum(&:amount), currency: order.currency).to_html %>
+            </span>
+          </div>
+        <% end %>
+      <% end %>
+
+
+      <% if order.adjustments.nonzero.non_tax.non_payment_method.eligible.exists? %>
+        <% sort_adjustments_with_flat_percent_last(order.adjustments.nonzero.non_tax.non_payment_method.eligible).each do |adjustment| %>
+          <div class="shopping-cart-total-text text-center lg:text-right uppercase font-medium">
+            <span>
+              <%= adjustment.label %>:
+            </span>
+            <span>
+              <%= adjustment.display_amount.to_html %>
+            </span>
+          </div>
+        <% end %>
+      <% end %>
+
+      <div class="shopping-cart-total-text text-center mt-3 lg:text-right uppercase font-bold text-lg">
+        <%= Spree.t(:total) %>:
+        <span class="shopping-cart-total-amount">
+          <% line_item_adj_total = BigDecimal(order.line_item_adjustments.nonzero.promotion.eligible.sum(:amount).to_s).round(2, BigDecimal::ROUND_HALF_UP) %>
+          <% order_adj_total = BigDecimal(order.adjustments.nonzero.non_tax.non_payment_method.eligible.sum(:amount).to_s).round(2, BigDecimal::ROUND_HALF_UP) %>
+          <%= Spree::Money.new(order.item_total + line_item_adj_total + order_adj_total, currency: order.currency).to_html %>
+        </span>
+      </div>
+
+
+      <div class="flex <%= !turbo_frame_request? && !turbo_stream_request? ? 'flex-row' : 'flex-col' %> gap-4 mt-4 w-full justify-end items-end">
+        <% if quick_checkout_enabled?(@order) %>
+          <div class="min-h-[46px] w-full has-[turbo-frame]:block group no-separator">
+            <% if !turbo_frame_request? && !turbo_stream_request? %>
+              <%= render partial: 'spree/checkout/quick_checkout', locals: { height: 46, theme: 'black', button_width: 320, container_class: "w-full flex justify-end" } %>
+            <% else %>
+              <%= render partial: 'spree/checkout/quick_checkout', locals: { height: 46, theme: 'white', max_columns: 2, max_rows: 2 } %>
+            <% end %>
+          </div>
+        <% end %>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;<%= ' width: 100%;' if turbo_frame_request? || turbo_stream_request? %>">
+          <%= link_to Spree.t(:checkout), spree.checkout_path(order.token),
+          class: 'btn-primary block w-full lg:w-80 text-center !no-underline !mt-0',
+          data: { 'turbo': 'false', 'cart-target': 'checkoutButton' } %>
+
+          <% # Continue Shopping button %>
+          <% if turbo_frame_request? || turbo_stream_request? %>
+            <%# Modal context: close the slideover %>
+            <%= button_tag Spree.t(:continue_shopping),
+              type: 'button',
+              style: 'display: inline-block; text-align: center; text-decoration: none; background-color: white; padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.875rem; line-height: 1.25rem; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; border-radius: var(--button-border-radius); border: var(--button-border-width) solid var(--button-background-color, var(--button)); color: var(--button-background-color, var(--button));',
+              data: { action: 'slideover#toggle' } %>
+          <% else %>
+            <%# Full-page cart context: redirect to products %>
+            <%= link_to Spree.t(:continue_shopping), spree.products_path,
+              style: 'display: inline-block; text-align: center; text-decoration: none; background-color: white; padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.875rem; line-height: 1.25rem; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; border-radius: var(--button-border-radius); border: var(--button-border-width) solid var(--button-background-color, var(--button)); color: var(--button-background-color, var(--button));',
+              data: { 'turbo-frame': '_top' } %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
