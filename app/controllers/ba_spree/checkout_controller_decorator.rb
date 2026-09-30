@@ -2,6 +2,7 @@ module BaSpree
   module CheckoutControllerDecorator
     def self.prepended(base)
       base.before_action :filter_bill_address_when_use_shipping, only: [ :update ], if: -> { params[:state] == 'payment' }
+      base.before_action :ensure_line_item_prices_current, only: [ :edit, :update ]
     end
 
     protected
@@ -92,6 +93,20 @@ module BaSpree
         order.merge!(@order, discard_merged: false)
         order.disassociate_user!
       end
+    end
+
+    # チェックアウトを放置している間に商品価格が変わっていたら、住所入力からやり直させる。
+    # address から次へ進むときに Spree が明細価格を再計算し、続く配送・支払ステップで
+    # 送料・税・支払金額が現在価格で作り直される。
+    # @see https://github.com/be-agile/giga-repeat/issues/1392
+    def ensure_line_item_prices_current
+      # 価格の再計算が走るのは address から次へ進むときだけなので、それより後の state だけ判定する
+      return unless %w[delivery payment confirm].include?(@order.state)
+      return unless @order.line_item_prices_stale?
+
+      @order.restart_checkout_flow
+      flash[:error] = Spree.t(:line_item_prices_changed)
+      redirect_to spree.checkout_state_path(@order.token, 'address')
     end
 
     def filter_bill_address_when_use_shipping

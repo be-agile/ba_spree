@@ -1,5 +1,6 @@
 ja:
   spree:
+    line_item_prices_changed: 商品の価格が変更されたため、注文内容をご確認のうえ再度お手続きください
     promotions: 販売促進
     confirm_order: 注文を確定する
     continue_without_logging_in: ログインせずに続ける

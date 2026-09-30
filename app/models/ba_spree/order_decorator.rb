@@ -89,6 +89,12 @@ module BaSpree
       # （cancel! 内の after_cancel が 'order.canceled' を publish 済みなので、ここは update のみ）
       publish_event('order.updated')
     end
+
+    # 現在の販売価格とずれている明細が1つでもあるか
+    # @see https://github.com/be-agile/giga-repeat/issues/1392
+    def line_item_prices_stale?
+      line_items.any?(&:price_stale?)
+    end
   end
 end
 

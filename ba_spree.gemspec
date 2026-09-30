@@ -37,36 +37,45 @@ Gem::Specification.new do |s|
   s.add_dependency 'deface'
 
   # 「日本人向けの EC サイトがすぐに作れる」を成立させるためのバンドル。
-  # ba_spree のコード自体はこれらのクラスを参照していないが、
-  # meta-gem としてまとめて入るようにする (rails / spree と同じパターン)。
+  # 日本の EC 商習慣(決済・住所・メール)、汎用の機能拡張、計測の engine をまとめて入れる
+  # meta-gem (rails / spree と同じパターン)。
   # @see https://github.com/be-agile/giga-repeat/issues/1317
   #
-  # 日本の EC 商習慣
-  s.add_dependency 'spree_address_format_i18n'
-  s.add_dependency 'spree_zip_autocomplete'
-  s.add_dependency 'ba_spree_bank_transfer'
-  s.add_dependency 'ba_spree_cash_on_delivery'
-  s.add_dependency 'spree_np_atobarai'
-  s.add_dependency 'spree_gmo_pg'
-  s.add_dependency 'spree_direct_debit'
-  s.add_dependency 'spree_custom_email'
-  # 汎用の機能拡張
+  # lib/ba_spree.rb がここに書いた engine をすべて require する。一覧はこの gemspec だけに持つ。
+  # engine とみなすのは homepage が https://github.com/be-agile/ の gem だけなので、新しい engine もそうすること。
+  # @see https://github.com/be-agile/giga-repeat/issues/1403
+  #
+  # ba_spree より先にロードする engine (lib/ba_spree.rb で ba_spree/engine より前に明示的に require する)。
+  # @see https://github.com/be-agile/giga-repeat/issues/1307
   s.add_dependency 'ba_spree_loyalty_points'
   s.add_dependency 'spree_materials'
   # Spree::BaseHelper#sort_adjustments_with_flat_percent_last が
   # Spree::Calculator::FlatPercentOrderTotal を参照する
   s.add_dependency 'spree_order_total_discount'
-  s.add_dependency 'ba_spree_related_products'
+  # ba_spree より後にロードする engine。lib/ba_spree.rb がこの記載順で require するので、
+  # 記載順 = engine のロード順 = decorator の prepend 順(下ほど外側)になる。
+  # 並べ替えると giga-repeat 本番の decorator の重なり順も変わる
+  s.add_dependency 'ba_spree_google_analytics'
+  s.add_dependency 'spree_yahoo_ads'
   s.add_dependency 'spree_products_payment_methods'
+  s.add_dependency 'ba_spree_cash_on_delivery'
+  s.add_dependency 'ba_spree_related_products'
+  s.add_dependency 'spree_np_atobarai'
+  s.add_dependency 'spree_direct_debit'
+  s.add_dependency 'spree_zip_autocomplete'
+  s.add_dependency 'spree_address_format_i18n'
+  s.add_dependency 'spree_custom_email'
+  s.add_dependency 'ba_spree_bank_transfer'
   s.add_dependency 'spree_limit_order_quantity'
   s.add_dependency 'spree_option_type_description'
   s.add_dependency 'spree_search_with_description'
   s.add_dependency 'spree_auto_capture_digital'
   s.add_dependency 'spree_digital_payment_notice'
   s.add_dependency 'spree_checkout_signup_promotion'
-  # 計測
-  s.add_dependency 'ba_spree_google_analytics'
-  s.add_dependency 'spree_yahoo_ads'
+  s.add_dependency 'spree_gmo_pg'
+
+  # 配送カテゴリが違っても共通の配送方法があれば同梱する splitter。全 DeploymentUnit に入れる
+  s.add_dependency 'spree_common_shipping_method_splitter'
 
   s.add_development_dependency 'gem_override_marker'
 end

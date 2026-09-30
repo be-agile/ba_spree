@@ -32,14 +32,8 @@ module Spree
     class ChildTaxonsSection < SimpleDelegator
       def cache_key
         child_taxon_ids = links.map(&:linkable_id)
-        max_updated_at = links.filter_map(&:linkable).map(&:updated_at).max.to_i
-        "spree/page_sections/child_taxons/#{child_taxon_ids.join('-')}-#{max_updated_at}"
-      end
-
-      # ActiveSupport::Cache は cache_key より先にこちらを見るため、
-      # 委譲先の実装が使われないよう合わせて上書きする
-      def cache_key_with_version
-        cache_key
+        max_updated_at = links.map(&:linkable).map(&:updated_at).max.to_i
+        "#{child_taxon_ids.join('-')}-#{max_updated_at}"
       end
     end
 

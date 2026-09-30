@@ -1,5 +1,6 @@
 en:
   spree:
+    line_item_prices_changed: Some item prices have changed. Please review your order and proceed again.
     promotions: Promotions
     confirm_order: Confirm Order
     continue_without_logging_in: Continue without logging in
