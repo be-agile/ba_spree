@@ -11,6 +11,9 @@ module BaSpree
     # @gem-override spree_storefront-5.3.6/app/controllers/spree/checkout_controller.rb#load_order
     # reason: ゲストチェックアウト対応のため super なしで丸ごと再実装。本家のゲスト処理を
     #   handle_guest_checkout / create_guest_order に抽出している (commit d0dbe2b4)
+    #   #1352: 抽出時に落ちていた本家の `elsif !current_store.prefers_guest_checkout?` →
+    #   `require_user(redirect_path: spree_signup_path)` の分岐を復元した。
+    #   これが無いと guest_checkout を OFF にしてもゲストのカートがチェックアウトへ進めてしまう。
     # @see https://github.com/be-agile/giga-repeat/commit/d0dbe2b4524e22c1cf974bbd4829c587ef7cd254
     def load_order
       return @order if @order.present?
@@ -35,6 +38,11 @@ module BaSpree
         elsif try_spree_current_user.nil? && !allow_access_to_complete_order_with_new_user?
           handle_guest_checkout
         end
+      elsif !current_store.prefers_guest_checkout?
+        # 本家にある分岐。ユーザーが紐付いていない（＝純粋なゲストの）カートは、
+        # ゲスト購入が無効なストアではログインを要求する。
+        # @see https://github.com/be-agile/giga-repeat/issues/1352
+        require_user(redirect_path: spree_signup_path)
       end
 
       # completed orders shouldn't be updated anymore

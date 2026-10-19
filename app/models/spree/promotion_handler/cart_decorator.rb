@@ -18,7 +18,12 @@ module Spree
         end
       end
 
+      # 注文に紐づいたプロモーションは、条件を外れたときに取り消す（deactivate）ため除外しない
       def exclude_promotion_ids
+        unmatched_product_rule_promotion_ids - order.promotion_ids
+      end
+
+      def unmatched_product_rule_promotion_ids
         cart_product_ids = order.line_items.joins(:variant).pluck('spree_variants.product_id').uniq
         # Find all promotions with Product rules
         all_product_rule_promotions = Spree::Promotion

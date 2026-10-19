@@ -1,6 +1,8 @@
 <%# @gem-override spree_storefront-5.3.6/app/views/themes/default/spree/orders/_summary.html.erb %>
-<%# reason: カートサマリの小計・割引・合計表示を adjustments ベースに組み替え、買い物を続けるボタンを追加している %>
+<%# reason: カートサマリの小計・割引・合計表示を adjustments ベースに組み替え、買い物を続けるボタンを追加している。空のクイックチェックアウト欄を出さず、スマホでボタンを横幅いっぱいにしている %>
+<%#   (「レジに進む」を押したらカートをローディング状態にして連打を防ぐ) %>
 <%# @see https://github.com/be-agile/giga-repeat/issues/698 %>
+<%# @see https://github.com/be-agile/giga-repeat/issues/1390 %>
 <%= turbo_frame_tag :cart_summary do %>
   <% if order.line_items.any? %>
     <div class="cart-summary-container p-4">
@@ -53,7 +55,9 @@
 
 
       <div class="flex <%= !turbo_frame_request? && !turbo_stream_request? ? 'flex-row' : 'flex-col' %> gap-4 mt-4 w-full justify-end items-end">
-        <% if quick_checkout_enabled?(@order) %>
+        <%# quick_checkout_enabled? は注文の条件しか見ないので、Apple Pay 等のボタンのパーシャルが1つも登録されていないと
+            中身が空の w-full の欄だけが出て、隣の「レジに進む」等のボタンの幅を半分奪う。パーシャルがあるときだけ出す %>
+        <% if quick_checkout_enabled?(@order) && Spree.storefront.partials.quick_checkout.any? %>
           <div class="min-h-[46px] w-full has-[turbo-frame]:block group no-separator">
             <% if !turbo_frame_request? && !turbo_stream_request? %>
               <%= render partial: 'spree/checkout/quick_checkout', locals: { height: 46, theme: 'black', button_width: 320, container_class: "w-full flex justify-end" } %>
@@ -62,21 +66,28 @@
             <% end %>
           </div>
         <% end %>
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;<%= ' width: 100%;' if turbo_frame_request? || turbo_stream_request? %>">
+        <%# 幅を指定しないと中身に合わせて縮み、日本語は1文字ごとに改行できるのでボタンが極端に細くなる。
+            スマホではボタンを横幅いっぱいに広げ、PC では幅 320px（lg:w-80）でページなら右寄せ・スライドオーバーなら中央にする。
+            ba_spree のビューは storefront の Tailwind のビルド対象外なので、クラスは本家のビューで使われていてビルドに含まれるものだけを使う %>
+        <div class="<%= turbo_frame_request? || turbo_stream_request? ? 'lg:items-center' : 'lg:items-end' %>" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+          <%# レジに進むと確認画面まで自動で進める(spree_checkout_auto_advance)分だけ待ち時間が長いので、数量の変更時と同じく
+              カートを操作できなくしてローディングを出す(連打も防ぐ)。ブラウザの戻るで復元されたときは元に戻す (#1390) %>
           <%= link_to Spree.t(:checkout), spree.checkout_path(order.token),
           class: 'btn-primary block w-full lg:w-80 text-center !no-underline !mt-0',
-          data: { 'turbo': 'false', 'cart-target': 'checkoutButton' } %>
+          data: { 'turbo': 'false', 'cart-target': 'checkoutButton', action: 'click->cart#disableCart pageshow@window->cart#enableCart' } %>
 
           <% # Continue Shopping button %>
           <% if turbo_frame_request? || turbo_stream_request? %>
             <%# Modal context: close the slideover %>
             <%= button_tag Spree.t(:continue_shopping),
               type: 'button',
+              class: 'lg:w-80',
               style: 'display: inline-block; text-align: center; text-decoration: none; background-color: white; padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.875rem; line-height: 1.25rem; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; border-radius: var(--button-border-radius); border: var(--button-border-width) solid var(--button-background-color, var(--button)); color: var(--button-background-color, var(--button));',
               data: { action: 'slideover#toggle' } %>
           <% else %>
             <%# Full-page cart context: redirect to products %>
             <%= link_to Spree.t(:continue_shopping), spree.products_path,
+              class: 'lg:w-80',
               style: 'display: inline-block; text-align: center; text-decoration: none; background-color: white; padding: 0.75rem 1.25rem; font-weight: 600; font-size: 0.875rem; line-height: 1.25rem; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer; border-radius: var(--button-border-radius); border: var(--button-border-width) solid var(--button-background-color, var(--button)); color: var(--button-background-color, var(--button));',
               data: { 'turbo-frame': '_top' } %>
           <% end %>

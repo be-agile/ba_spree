@@ -69,7 +69,7 @@ are specific to your shop, so set them yourself.
 
 ## What you get
 
-ba_spree itself is a thin wrapper. The substance is these 20 engines, all
+ba_spree itself is a thin wrapper. The substance is these 23 engines, all
 pulled in by a single `gem 'ba_spree'`.
 
 ### Japanese commerce conventions
@@ -99,6 +99,9 @@ pulled in by a single `gem 'ba_spree'`.
 | `spree_auto_capture_digital` | Auto-capture orders containing only digital products |
 | `spree_digital_payment_notice` | Show payment notices for orders containing digital products |
 | `spree_checkout_signup_promotion` | Prompt sign-up / login at the checkout address step |
+| `spree_order_total_discount` | Percentage discount on the order total |
+| `spree_common_shipping_method_splitter` | Ship items in one package when their shipping categories share a shipping method |
+| `spree_promotion_action_create_line_items` | Stop customers adding, changing or removing the items a promotion adds to the cart |
 
 ### Analytics
 

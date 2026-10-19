@@ -77,5 +77,8 @@ Gem::Specification.new do |s|
   # 配送カテゴリが違っても共通の配送方法があれば同梱する splitter。全 DeploymentUnit に入れる
   s.add_dependency 'spree_common_shipping_method_splitter'
 
+  # プロモーションがカートに追加する商品(キャンペーン商品)を、お客様が追加・変更・削除できないようにする
+  s.add_dependency 'spree_promotion_action_create_line_items'
+
   s.add_development_dependency 'gem_override_marker'
 end

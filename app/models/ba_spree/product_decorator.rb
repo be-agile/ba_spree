@@ -24,6 +24,20 @@ module BaSpree
 
       # ProductProperty -> metafields 移行用の読み書きヘルパー(Spree 5.4 の Property 削除対応)
       base.include Spree::ProductPropertyMetafields
+
+      # 指定カテゴリ群の中で、カテゴリツリーを縦型探索した順(lft) → カテゴリ内の商品の並び順(position) に並べる。
+      # 複数のカテゴリに属する商品は、最初に出てくる位置で並ぶ。
+      # taxon は、絞り込みに使う spree_products_taxons の行からたどり、指定カテゴリ群の行だけで MIN をとる。
+      base.add_search_scope :ascend_by_taxons_tree_position do |taxon_ids|
+        # position(INT)の上の桁に lft を置いた1つの整数にする
+        tree_position_sql = "MIN(#{Spree::Taxon.table_name}.lft * #{2**32} + #{Spree::Classification.table_name}.position)"
+
+        joins(classifications: :taxon).
+          where(Spree::Classification.table_name => { taxon_id: taxon_ids }).
+          select("#{Spree::Product.table_name}.*", "#{tree_position_sql} AS taxon_tree_position").
+          group("#{Spree::Product.table_name}.id").
+          order(Arel.sql("#{tree_position_sql} ASC"))
+      end
     end
 
     def set_slug
